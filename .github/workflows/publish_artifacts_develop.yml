@@ -1,0 +1,60 @@
+name: Publish Artifact to Matillion on PR Merge to development
+on:
+  push:
+    branches: [ "develop" ]
+jobs:
+  dpc-api-call:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Required for tagging
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Calculate Next Version
+        id: calculate_version
+        run: |
+          git fetch --tags
+          latest_version=$(git tag --sort=-v:refname | head -n 1)
+          echo "Latest version: $latest_version"
+          if [[ "$latest_version" =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            major=${BASH_REMATCH[1]}
+            minor=${BASH_REMATCH[2]}
+            patch=${BASH_REMATCH[3]}
+            next_version="v$major.$minor.$((patch + 1))"
+          else
+            next_version="v1.0.0"
+          fi
+          echo "Next version: $next_version"
+          echo "next_version=$next_version" >> $GITHUB_OUTPUT
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+      - name: Install Dependencies
+        run: pip install requests
+      - name: Run API Call Script
+        run: python "CICD Scripts/dpc_publish_develop.py"
+        env:
+          DPC_CLIENT_ID: ${{ secrets.DPC_CLIENT_ID }}
+          DPC_CLIENT_SECRET: ${{ secrets.DPC_CLIENT_SECRET }}
+          DPC_TOKEN_URL: ${{ vars.DPC_TOKEN_URL }}
+          DPC_PROJECT_ID: ${{ vars.DPC_PROJECT_ID }}
+          DPC_ACCOUNT_REGION: ${{ vars.DPC_ACCOUNT_REGION }}
+          DPC_TEST_ENV: ${{ vars.DPC_TEST_ENV }}
+          DPC_PROD_ENV: ${{ vars.DPC_PROD_ENV }}
+          VERSION_NAME: ${{ steps.calculate_version.outputs.next_version }}
+          BRANCH_NAME: ${{ github.ref_name }}
+      - name: Tag Commit
+        uses: actions/github-script@v5
+        with:
+          script: |
+            const tagName = '${{ steps.calculate_version.outputs.next_version }}';
+            const sha = context.sha;
+            console.log(`Creating tag '${tagName}' on commit '${sha}'...`);
+            await github.rest.git.createRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: `refs/tags/${tagName}`,
+              sha: sha
+            });
+            console.log(`Tag '${tagName}' created successfully.`);

@@ -1,0 +1,35 @@
+name: Promote Artifact from development to production on PR Merge to main
+on:
+  push:
+    branches: [ "main" ]
+jobs:
+  dpc-api-call:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Ensures all tags are fetched
+      - name: Get the latest v1.x.x tag
+        id: get_tag
+        run: |
+          latest_tag=$(git tag --sort=-v:refname | grep -E '^v1\.[0-9]+\.[0-9]+$' | head -n 1 || echo "none")
+          echo "Latest v1.x.x tag: $latest_tag"
+          echo "tag=$latest_tag" >> "$GITHUB_ENV"
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.x"
+      - name: Install Dependencies
+        run: pip install requests
+      - name: Run API Call Script
+        run: python "CICD Scripts/dpc_promote_production.py"
+        env:
+          DPC_CLIENT_ID: ${{ secrets.DPC_CLIENT_ID }}
+          DPC_CLIENT_SECRET: ${{ secrets.DPC_CLIENT_SECRET }}
+          DPC_TOKEN_URL: ${{ vars.DPC_TOKEN_URL }}
+          DPC_PROJECT_ID: ${{ vars.DPC_PROJECT_ID }}
+          DPC_ACCOUNT_REGION: ${{ vars.DPC_ACCOUNT_REGION }}
+          DPC_TEST_ENV: ${{ vars.DPC_TEST_ENV }}
+          DPC_PROD_ENV: ${{ vars.DPC_PROD_ENV }}
+          VERSION_NAME: ${{ env.tag }}

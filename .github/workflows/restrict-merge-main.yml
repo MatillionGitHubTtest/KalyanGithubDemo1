@@ -1,0 +1,31 @@
+name: Restrict Merge to Main
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize]
+    branches:
+      - main
+permissions:
+  pull-requests: write
+jobs:
+  enforce-policy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check source branch and close PR if not 'develop'
+        if: github.event.pull_request.head.ref != 'develop'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          echo "Error: PR #${PR_NUMBER} attempts to merge '${HEAD_REF}' into '${BASE_REF}'."
+          echo "Policy requires merges to '${BASE_REF}' must come from 'develop' branch."
+          COMMENT_BODY="❌ **Auto-closing PR**: Merges into the \`${BASE_REF}\` branch are strictly limited to the \`develop\` branch. This PR originates from \`${HEAD_REF}\`. Please ensure your changes are first merged into \`develop\` and then open a new PR from \`develop\` to \`${BASE_REF}\`"
+          gh pr comment ${PR_NUMBER} --repo ${GH_REPO} --body "$COMMENT_BODY"
+          gh pr close ${PR_NUMBER} --repo ${GH_REPO}
+          echo "Pull Request #${PR_NUMBER} closed automatically."
+      - name: Log allowed PR from 'develop'
+        if: github.event.pull_request.head.ref == 'develop'
+        run: |
+          echo "PR #${{ github.event.pull_request.number }} from 'develop' to 'main' adheres to policy. No action needed by this workflow."
