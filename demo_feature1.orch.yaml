@@ -1,15 +1,15 @@
-type: orchestration
+type: "orchestration"
 version: "1.0"
 pipeline:
   components:
     Start:
-      type: start
+      type: "start"
       parameters:
-        componentName: Start
+        componentName: "Start"
 design:
   components:
     Start:
       position:
-        x: 0
-        y: 0
+        x: 80
+        "y": -20
       tempMetlId: 1
