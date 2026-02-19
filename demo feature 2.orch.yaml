@@ -1,0 +1,15 @@
+type: orchestration
+version: "1.0"
+pipeline:
+  components:
+    Start:
+      type: start
+      parameters:
+        componentName: Start
+design:
+  components:
+    Start:
+      position:
+        x: 0
+        y: 0
+      tempMetlId: 1
