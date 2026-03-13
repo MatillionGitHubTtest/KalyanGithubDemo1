@@ -1,15 +1,33 @@
-type: orchestration
+type: "orchestration"
 version: "1.0"
 pipeline:
   components:
     Start:
-      type: start
+      type: "start"
+      transitions:
+        unconditional:
+        - "Print Variables"
       parameters:
-        componentName: Start
+        componentName: "Start"
+    Print Variables:
+      type: "print-variables"
+      parameters:
+        componentName: "Print Variables"
+        variablesToPrint:
+        prefixText:
+        includeVariableName: "No"
+      postProcessing:
+        updateOutputMessage:
+        updateScalarVariables:
 design:
   components:
     Start:
       position:
         x: 0
-        y: 0
+        "y": 0
       tempMetlId: 1
+    Print Variables:
+      position:
+        x: 160
+        "y": 0
+      tempMetlId: 2
