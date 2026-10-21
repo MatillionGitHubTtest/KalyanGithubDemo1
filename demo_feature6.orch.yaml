@@ -1,0 +1,18 @@
+type: orchestration
+version: "1.0"
+pipeline:
+  components:
+    Start:
+      type: start
+      parameters:
+        componentName: Start
+      postProcessing:
+        updateOutputMessage: null
+        updateScalarVariables: null
+        updateGridVariables: null
+design:
+  components:
+    Start:
+      position:
+        x: 0
+        y: 0
